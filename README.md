@@ -7,4 +7,4 @@
 # Demonstração 
 *
 
-![demonstração do aplicativo](https://raw.githubusercontent.com/sulivansimoes/Scripts-SQL/main/Scripts%20SQL%20Server%20-%20Protheus/preview/Query%20para%20ver%20quantos%20registros%20deletados%20tem%20nas%20tabelas%20do%20Protheus.png)
+![demonstração](https://raw.githubusercontent.com/sulivansimoes/Scripts_SQL/main/preview/Query%20para%20ver%20quantos%20registros%20deletados%20tem%20nas%20tabelas%20do%20Protheus.png)
