@@ -3,16 +3,20 @@ use Protheus
 DECLARE @Contador int = 0;
 DECLARE @QuantidadeTabelas int
 DECLARE @NomeTabela nvarchar(500) ;
-DECLARE @Linhas  int;
+DECLARE @Linhas int;
 DECLARE @Query nvarchar(max) = '';
 DECLARE @QueryAux nvarchar(max) = '';
 
 DECLARE TodasTabelas cursor for
-SELECT SUM(partitions.rows) AS '@Linhas',
+SELECT SUM(partitions.rows) AS 'linhas',
 	   dbtables.name AS 'tabela'
 FROM sys.tables AS dbtables
 JOIN sys.partitions AS partitions ON dbtables.object_id = partitions.object_id AND partitions.index_id in (0,1)
-WHERE dbtables.[name]  NOT LIKE '%TOP_%'
+WHERE dbtables.[name] IN( 	SELECT T.[name] AS Tabela
+							FROM sys.sysobjects AS T (NOLOCK)
+							INNER JOIN sys.all_columns AS C (NOLOCK) ON T.id = C.[object_id] AND T.[xtype] = 'U'
+						    WHERE C.[name] LIKE '%D_E_L_E_T_%'
+						)
 GROUP BY schema_name(schema_id), dbtables.name
 HAVING SUM(partitions.rows) > 0
 
@@ -20,7 +24,11 @@ HAVING SUM(partitions.rows) > 0
 SET @QuantidadeTabelas = (  SELECT MAX(LINHA) FROM( SELECT  ROW_NUMBER() OVER(ORDER BY dbtables.name DESC) AS LINHA
 					  							    FROM sys.tables AS dbtables
 												    JOIN sys.partitions AS partitions ON dbtables.object_id = partitions.object_id AND partitions.index_id in (0,1)
-												    WHERE dbtables.[name]  NOT LIKE '%TOP_%'
+												    WHERE dbtables.[name] IN( 	SELECT T.name AS Tabela
+																				FROM sys.sysobjects AS T(NOLOCK)
+																				INNER JOIN sys.all_columns AS C(NOLOCK) ON T.id = C.object_id AND T.[xtype] = 'U'
+																				WHERE C.[name] LIKE '%D_E_L_E_T_%'
+																			)
 												    GROUP BY schema_name(schema_id), dbtables.name
 												    HAVING SUM(partitions.rows) > 0 ) AS TMP )												
 
@@ -31,7 +39,7 @@ INTO @Linhas, @NomeTabela
 PRINT 'Processo iniciado';
 PRINT 'Analisando '+CAST(@QuantidadeTabelas AS NVARCHAR(50)) +' tabelas';
 
-WHILE @contador < @QuantidadeTabelas
+WHILE @Contador < @QuantidadeTabelas
 	BEGIN 
 
 		SET @QueryAux = ' SELECT Tabela,'
@@ -52,7 +60,7 @@ WHILE @contador < @QuantidadeTabelas
 					  + ' GROUP BY Tabela, Deletados, Nao_deletados'
 					  + CHAR(13)+CHAR(10)
 
-		IF @contador < @QuantidadeTabelas -1
+		IF @Contador < @QuantidadeTabelas -1
 			BEGIN				
 				SET @QueryAux += ' UNION ALL'
 			END
@@ -61,7 +69,7 @@ WHILE @contador < @QuantidadeTabelas
 
 		SET @Query += @QueryAux
 
-		SET @contador += 1;
+		SET @Contador += 1;
 
 		FETCH NEXT FROM TodasTabelas  
 		INTO @Linhas, @NomeTabela
